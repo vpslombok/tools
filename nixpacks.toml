@@ -1,7 +1,7 @@
-# Konfigurasi untuk Nixpacks (Build system Railway)
+# Konfigurasi Nixpacks Railway
 
 [phases.setup]
 aptPkgs = ["ffmpeg"]
 
 [start]
-cmd = "flask init-db && gunicorn --worker-tmp-dir /dev/shm app:app"
+cmd = "gunicorn --bind 0.0.0.0:$PORT --worker-tmp-dir /dev/shm app:app"

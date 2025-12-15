@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+os.environ["PATH"] += os.pathsep + "/usr/bin"  # Tambahkan path FFmpeg jika diperlukan
 
 load_dotenv() # Muat variabel dari file .env
 
@@ -114,6 +115,10 @@ class YouTubeDownloader:
             # Secara eksplisit temukan path FFmpeg untuk yt-dlp
             import shutil
             ffmpeg_path = shutil.which('ffmpeg')
+            
+            # Fallback untuk lingkungan hosting di mana PATH mungkin tidak lengkap
+            if not ffmpeg_path and os.path.exists('/usr/bin/ffmpeg'):
+                ffmpeg_path = '/usr/bin/ffmpeg'
             
             # Configure yt-dlp options
             ydl_opts = {
@@ -381,7 +386,12 @@ def system_status():
     # Get disk space
     import shutil
     # Check if FFmpeg is available in the system's PATH
-    ffmpeg_available = shutil.which('ffmpeg') is not None
+    ffmpeg_path = shutil.which('ffmpeg')
+    # Fallback untuk lingkungan hosting
+    if not ffmpeg_path and os.path.exists('/usr/bin/ffmpeg'):
+        ffmpeg_path = '/usr/bin/ffmpeg'
+        
+    ffmpeg_available = ffmpeg_path is not None
     total, used, free = shutil.disk_usage(".")
     
     return jsonify({
