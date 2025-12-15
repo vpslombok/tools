@@ -401,16 +401,10 @@ def clear_history():
 @app.route('/api/system-status')
 def system_status():
     """Get system status"""
-    # Check if FFmpeg is available
-    ffmpeg_available = False
-    try:
-        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-        ffmpeg_available = True
-    except:
-        pass
-    
     # Get disk space
     import shutil
+    # Check if FFmpeg is available in the system's PATH
+    ffmpeg_available = shutil.which('ffmpeg') is not None
     total, used, free = shutil.disk_usage(".")
     
     return jsonify({
