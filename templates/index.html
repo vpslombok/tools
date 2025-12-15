@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-translate-key="pageTitle">
+      YouTube Music Downloader - Web Version
+    </title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #ff0000;
+        --secondary-color: #282828;
+        --accent-color: #3ea6ff;
+        --background-color: #0f0f0f;
+        --card-color: #212121;
+        --text-color: #ffffff;
+        --text-secondary: #aaaaaa;
+      }
+
+      body {
+        background-color: var(--background-color);
+        color: var(--text-color);
+        font-family: "Roboto", Arial, sans-serif;
+        min-height: 100vh;
+      }
+
+      .navbar {
+        background-color: var(--secondary-color) !important;
+        border-bottom: 2px solid var(--primary-color);
+      }
+
+      .logo {
+        color: var(--primary-color);
+        font-weight: bold;
+        font-size: 1.5rem;
+      }
+
+      .logo i {
+        color: var(--primary-color);
+      }
+
+      .card {
+        background-color: var(--card-color);
+        border: none;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .btn-primary {
+        background-color: var(--primary-color);
+        border: none;
+        padding: 10px 25px;
+        font-weight: 500;
+      }
+
+      .btn-primary:hover {
+        background-color: #cc0000;
+      }
+
+      .btn-outline-primary {
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+      }
+
+      .btn-outline-primary:hover {
+        background-color: var(--accent-color);
+        color: white;
+      }
+
+      .form-control,
+      .form-select {
+        background-color: #383838;
+        border: 1px solid #555;
+        color: var(--text-color);
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        background-color: #383838;
+        border-color: var(--accent-color);
+        color: var(--text-color);
+        box-shadow: 0 0 0 0.25rem rgba(62, 166, 255, 0.25);
+      }
+
+      .progress {
+        background-color: #383838;
+        height: 10px;
+        border-radius: 5px;
+      }
+
+      .progress-bar {
+        background-color: var(--primary-color);
+      }
+
+      .video-preview {
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: var(--secondary-color);
+      }
+
+      .video-preview img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+      }
+
+      .quality-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+      }
+
+      .quality-badge:hover {
+        transform: translateY(-2px);
+      }
+
+      .quality-badge.active {
+        border-color: var(--accent-color);
+        background-color: rgba(62, 166, 255, 0.1);
+      }
+
+      .download-item {
+        background-color: var(--card-color);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid var(--primary-color);
+      }
+
+      .status-badge {
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .status-processing {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+      }
+
+      .status-completed {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+      }
+
+      .status-error {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+      }
+
+      footer {
+        background-color: var(--secondary-color);
+        border-top: 1px solid #333;
+        margin-top: 40px;
+      }
+
+      .tab-content {
+        padding: 20px 0;
+      }
+
+      .nav-tabs {
+        border-bottom: 1px solid #444;
+      }
+
+      .nav-tabs .nav-link {
+        color: var(--text-secondary);
+        border: none;
+      }
+
+      .nav-tabs .nav-link.active {
+        color: var(--text-color);
+        background-color: transparent;
+        border-bottom: 2px solid var(--primary-color);
+      }
+
+      .tooltip-inner {
+        background-color: var(--card-color);
+        color: var(--text-color);
+      }
+
+      .tooltip-arrow::before {
+        border-top-color: var(--card-color) !important;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding-left: 15px;
+          padding-right: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand logo" href="#" data-translate-key="navbarBrand">
+          <i class="fas fa-music"></i> YT Music Downloader
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link active"
+                href="#home"
+                data-translate-key="navHome"
+              >
+                <i class="fas fa-home"></i> Home
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#batch" data-translate-key="navBatch">
+                <i class="fas fa-list"></i> Batch Download
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#history"
+                data-translate-key="navHistory"
+              >
+                <i class="fas fa-history"></i> History
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#settings"
+                data-translate-key="navSettings"
+              >
+                <i class="fas fa-cog"></i> Settings
+              </a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="languageDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="fas fa-globe"></i>
+                <span data-translate-key="navLanguage">Language</span>
+              </a>
+              <ul
+                class="dropdown-menu dropdown-menu-dark"
+                aria-labelledby="languageDropdown"
+              >
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="#"
+                    onclick="changeLanguage('en')"
+                    >English</a
+                  >
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="#"
+                    onclick="changeLanguage('id')"
+                    >Bahasa Indonesia</a
+                  >
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+      <!-- Home Tab -->
+      <div id="home" class="tab-content">
+        <div class="row">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-body">
+                <h4 class="card-title" data-translate-key="downloadTitle">
+                  <i class="fas fa-download"></i> Download YouTube Music
+                </h4>
+                <p class="text-muted" data-translate-key="downloadSubtitle">
+                  Paste YouTube URL to download high quality audio
+                </p>
+
+                <div class="input-group mb-3">
+                  <span class="input-group-text">
+                    <i class="fab fa-youtube"></i>
+                  </span>
+                  <input
+                    type="text"
+                    id="youtubeUrl"
+                    class="form-control"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    aria-label="YouTube URL"
+                    data-translate-key-placeholder="urlPlaceholder"
+                  />
+                  <button
+                    class="btn btn-primary"
+                    id="fetchInfoBtn"
+                    data-translate-key="fetchInfoBtn"
+                  >
+                    <i class="fas fa-search"></i> Fetch Info
+                  </button>
+                </div>
+
+                <!-- Video Preview -->
+                <div
+                  id="videoPreview"
+                  class="video-preview mb-3"
+                  style="display: none"
+                >
+                  <div class="row">
+                    <div class="col-md-4">
+                      <img id="videoThumbnail" src="" alt="Video Thumbnail" />
+                    </div>
+                    <div class="col-md-8 p-3">
+                      <h5 id="videoTitle"></h5>
+                      <p
+                        class="text-muted"
+                        id="videoChannel"
+                        data-translate-key-prefix="channelPrefix"
+                      ></p>
+                      <div class="row">
+                        <div class="col-6">
+                          <small
+                            ><i class="fas fa-clock"></i>
+                            <span id="videoDuration"></span
+                          ></small>
+                        </div>
+                        <div class="col-6">
+                          <small
+                            ><i class="fas fa-eye"></i>
+                            <span
+                              id="videoViews"
+                              data-translate-key-suffix="viewsSuffix"
+                            ></span
+                          ></small>
+                        </div>
+                      </div>
+                      <p class="mt-2 small" id="videoDescription"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quality Selection -->
+                <div id="qualitySelection" style="display: none">
+                  <h6 class="mb-3" data-translate-key="selectQualityTitle">
+                    Select Audio Quality:
+                  </h6>
+                  <div id="qualityOptions" class="mb-3">
+                    <!-- Quality options will be populated here -->
+                  </div>
+
+                  <div class="d-grid gap-2">
+                    <button
+                      class="btn btn-primary btn-lg"
+                      id="downloadBtn"
+                      data-translate-key="startDownloadBtn"
+                    >
+                      <i class="fas fa-download"></i> Start Download
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Progress -->
+                <div id="downloadProgress" class="mt-3" style="display: none">
+                  <h6 data-translate-key="progressTitle">Download Progress</h6>
+                  <div class="progress mb-2">
+                    <div
+                      id="progressBar"
+                      class="progress-bar"
+                      role="progressbar"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <p
+                    id="progressText"
+                    class="text-center small"
+                    data-translate-key="progressWaiting"
+                  >
+                    Waiting to start...
+                  </p>
+                  <div id="downloadComplete" style="display: none">
+                    <div class="alert alert-success">
+                      <i class="fas fa-check-circle"></i>
+                      <span data-translate-key="downloadCompleteText"
+                        >Download complete!</span
+                      >
+                      <a
+                        href="#"
+                        id="downloadLink"
+                        class="btn btn-sm btn-success float-end"
+                      >
+                        <i class="fas fa-file-download"></i> Download File
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <!-- System Status -->
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title" data-translate-key="systemStatusTitle">
+                  <i class="fas fa-server"></i> System Status
+                </h5>
+                <div id="systemStatus">
+                  <p class="small" data-translate-key="loadingStatus">
+                    Loading system status...
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Downloads -->
+            <div class="card">
+              <div class="card-body">
+                <h5
+                  class="card-title"
+                  data-translate-key="recentDownloadsTitle"
+                >
+                  <i class="fas fa-history"></i> Recent Downloads
+                </h5>
+                <div id="recentDownloads">
+                  <p
+                    class="small text-muted"
+                    data-translate-key="noDownloadsYet"
+                  >
+                    No downloads yet
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Guide -->
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title" data-translate-key="quickGuideTitle">
+                  <i class="fas fa-question-circle"></i> Quick Guide
+                </h5>
+                <ul class="small">
+                  <li data-translate-key="guideStep1">
+                    Paste YouTube URL in the box
+                  </li>
+                  <li data-translate-key="guideStep2">
+                    Click "Fetch Info" to get video details
+                  </li>
+                  <li data-translate-key="guideStep3">
+                    Select desired audio quality
+                  </li>
+                  <li data-translate-key="guideStep4">
+                    Click "Start Download"
+                  </li>
+                  <li data-translate-key="guideStep5">
+                    Download will start automatically
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Batch Download Tab -->
+      <div id="batch" class="tab-content" style="display: none">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title" data-translate-key="batchDownloadTitle">
+              <i class="fas fa-list"></i> Batch Download
+            </h4>
+            <p class="text-muted" data-translate-key="batchSubtitle">
+              Upload a text file with YouTube URLs (one per line)
+            </p>
+
+            <div class="mb-3">
+              <label class="form-label" data-translate-key="batchSelectFile"
+                >Select File (.txt)</label
+              >
+              <input
+                class="form-control"
+                type="file"
+                id="batchFile"
+                accept=".txt"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" data-translate-key="batchSelectQuality"
+                >Select Quality</label
+              >
+              <select class="form-select" id="batchQuality">
+                <option value="mp3_320">MP3 Ultra HD (320kbps)</option>
+                <option value="mp3_256">MP3 High Quality (256kbps)</option>
+                <option value="flac">FLAC Lossless</option>
+                <option value="m4a">M4A/AAC (256kbps)</option>
+              </select>
+            </div>
+
+            <button
+              class="btn btn-primary"
+              id="startBatchBtn"
+              data-translate-key="startBatchBtn"
+            >
+              <i class="fas fa-play"></i> Start Batch Download
+            </button>
+
+            <div id="batchProgress" class="mt-3" style="display: none">
+              <h6>Batch Progress</h6>
+              <div id="batchJobs">
+                <!-- Batch jobs will be listed here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div id="history" class="tab-content" style="display: none">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="card-title m-0" data-translate-key="historyTitle">
+                <i class="fas fa-history"></i> Download History
+              </h4>
+              <button
+                class="btn btn-sm btn-outline-danger"
+                id="clearHistoryBtn"
+                data-translate-key="clearHistoryBtn"
+              >
+                <i class="fas fa-trash"></i> Clear History
+              </button>
+            </div>
+
+            <div id="historyList">
+              <p
+                class="text-center text-muted"
+                data-translate-key="loadingHistory"
+              >
+                Loading history...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div id="settings" class="tab-content" style="display: none">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title" data-translate-key="settingsTitle">
+              <i class="fas fa-cog"></i> Settings
+            </h4>
+
+            <div class="mb-3">
+              <label
+                class="form-label"
+                data-translate-key="settingsDefaultQuality"
+                >Default Download Quality</label
+              >
+              <select class="form-select" id="defaultQuality">
+                <option value="mp3_320">MP3 Ultra HD (320kbps)</option>
+                <option value="mp3_256">MP3 High Quality (256kbps)</option>
+                <option value="flac">FLAC Lossless</option>
+                <option value="m4a">M4A/AAC (256kbps)</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="embedThumbnail"
+                  checked
+                />
+                <label
+                  class="form-check-label"
+                  for="embedThumbnail"
+                  data-translate-key="settingsEmbedThumbnail"
+                >
+                  Embed thumbnail in audio file
+                </label>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="addMetadata"
+                  checked
+                />
+                <label
+                  class="form-check-label"
+                  for="addMetadata"
+                  data-translate-key="settingsAddMetadata"
+                >
+                  Add metadata (title, artist, etc.)
+                </label>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label
+                class="form-label"
+                data-translate-key="settingsDownloadFolder"
+                >Download Folder</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="downloadFolder"
+                value="downloads"
+                readonly
+              />
+            </div>
+
+            <button
+              class="btn btn-primary"
+              id="saveSettingsBtn"
+              data-translate-key="saveSettingsBtn"
+            >
+              <i class="fas fa-save"></i> Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <h6 data-translate-key="footerTitle">YouTube Music Downloader</h6>
+            <p class="small text-muted" data-translate-key="footerDescription">
+              Tool untuk mendownload musik dari YouTube dengan kualitas tinggi.
+              Hanya untuk konten yang Anda miliki haknya.
+            </p>
+          </div>
+          <div class="col-md-6 text-end">
+            <p class="small text-muted" data-translate-key="footerCredits">
+              &copy; 2024 YouTube Music Downloader<br />
+              Made with <i class="fas fa-heart text-danger"></i> for music
+              lovers
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+      // Global variables
+      let currentJobId = null;
+      let qualityOptions = {};
+      let selectedFormat = "mp3_320";
+
+      // Translation Data
+      const translations = {
+        en: {
+          pageTitle: "YouTube Music Downloader - Web Version",
+          navbarBrand: "YT Music Downloader",
+          navHome: "Home",
+          navBatch: "Batch Download",
+          navHistory: "History",
+          navSettings: "Settings",
+          navLanguage: "Language",
+          downloadTitle: "Download YouTube Music",
+          downloadSubtitle: "Paste YouTube URL to download high quality audio",
+          urlPlaceholder: "https://www.youtube.com/watch?v=...",
+          fetchInfoBtn: "Fetch Info",
+          channelPrefix: "Channel: ",
+          viewsSuffix: " views",
+          selectQualityTitle: "Select Audio Quality:",
+          startDownloadBtn: "Start Download",
+          progressTitle: "Download Progress",
+          progressWaiting: "Waiting to start...",
+          downloadCompleteText: "Download complete!",
+          systemStatusTitle: "System Status",
+          loadingStatus: "Loading system status...",
+          recentDownloadsTitle: "Recent Downloads",
+          noDownloadsYet: "No downloads yet",
+          quickGuideTitle: "Quick Guide",
+          guideStep1: "Paste YouTube URL in the box",
+          guideStep2: 'Click "Fetch Info" to get video details',
+          guideStep3: "Select desired audio quality",
+          guideStep4: 'Click "Start Download"',
+          guideStep5: "Download will start automatically",
+          batchDownloadTitle: "Batch Download",
+          batchSubtitle: "Upload a text file with YouTube URLs (one per line)",
+          batchSelectFile: "Select File (.txt)",
+          batchSelectQuality: "Select Quality",
+          startBatchBtn: "Start Batch Download",
+          historyTitle: "Download History",
+          clearHistoryBtn: "Clear History",
+          loadingHistory: "Loading history...",
+          settingsTitle: "Settings",
+          settingsDefaultQuality: "Default Download Quality",
+          settingsEmbedThumbnail: "Embed thumbnail in audio file",
+          settingsAddMetadata: "Add metadata (title, artist, etc.)",
+          settingsDownloadFolder: "Download Folder",
+          saveSettingsBtn: "Save Settings",
+          footerTitle: "YouTube Music Downloader",
+          footerDescription:
+            "A tool to download music from YouTube in high quality. Only for content you have rights to.",
+          footerCredits:
+            '&copy; 2024 YouTube Music Downloader<br/>Made with <i class="fas fa-heart text-danger"></i> for music lovers',
+          alertEnterUrl: "Please enter a YouTube URL",
+          alertFetchFailed: "Failed to fetch video information",
+          alertStartFailed: "Failed to start download",
+          alertSettingsSaved: "Settings saved!",
+          alertSelectFile: "Please select a file",
+          alertBatchStartFailed: "Failed to start batch download",
+          confirmClearHistory:
+            "Are you sure you want to clear your download history?",
+          statusCompleted: "completed",
+          statusError: "error",
+          statusProcessing: "processing",
+          downloading: "Downloading...",
+          filePrefix: "File: ",
+          errorPrefix: "Error: ",
+          qualityPrefix: "Quality: ",
+          sizePrefix: "Size: ",
+          noHistory: "No download history",
+          ffmpegAvailable: "High quality conversion available",
+          ffmpegNotAvailable: "Install FFmpeg for best quality",
+          freeSpacePrefix: "Free space: ",
+          totalDownloadsPrefix: "Total downloads: ",
+        },
+        id: {
+          pageTitle: "Pengunduh Musik YouTube - Versi Web",
+          navbarBrand: "Pengunduh Musik YT",
+          navHome: "Beranda",
+          navBatch: "Unduh Massal",
+          navHistory: "Riwayat",
+          navSettings: "Pengaturan",
+          navLanguage: "Bahasa",
+          downloadTitle: "Unduh Musik YouTube",
+          downloadSubtitle:
+            "Tempel URL YouTube untuk mengunduh audio kualitas tinggi",
+          urlPlaceholder: "https://www.youtube.com/watch?v=...",
+          fetchInfoBtn: "Ambil Info",
+          channelPrefix: "Saluran: ",
+          viewsSuffix: " kali ditonton",
+          selectQualityTitle: "Pilih Kualitas Audio:",
+          startDownloadBtn: "Mulai Unduh",
+          progressTitle: "Proses Unduhan",
+          progressWaiting: "Menunggu untuk memulai...",
+          downloadCompleteText: "Unduhan selesai!",
+          systemStatusTitle: "Status Sistem",
+          loadingStatus: "Memuat status sistem...",
+          recentDownloadsTitle: "Unduhan Terkini",
+          noDownloadsYet: "Belum ada unduhan",
+          quickGuideTitle: "Panduan Cepat",
+          guideStep1: "Tempel URL YouTube di kotak",
+          guideStep2: 'Klik "Ambil Info" untuk detail video',
+          guideStep3: "Pilih kualitas audio yang diinginkan",
+          guideStep4: 'Klik "Mulai Unduh"',
+          guideStep5: "Unduhan akan dimulai secara otomatis",
+          batchDownloadTitle: "Unduh Massal",
+          batchSubtitle: "Unggah file teks berisi URL YouTube (satu per baris)",
+          batchSelectFile: "Pilih File (.txt)",
+          batchSelectQuality: "Pilih Kualitas",
+          startBatchBtn: "Mulai Unduh Massal",
+          historyTitle: "Riwayat Unduhan",
+          clearHistoryBtn: "Hapus Riwayat",
+          loadingHistory: "Memuat riwayat...",
+          settingsTitle: "Pengaturan",
+          settingsDefaultQuality: "Kualitas Unduhan Default",
+          settingsEmbedThumbnail: "Sematkan thumbnail di file audio",
+          settingsAddMetadata: "Tambahkan metadata (judul, artis, dll.)",
+          settingsDownloadFolder: "Folder Unduhan",
+          saveSettingsBtn: "Simpan Pengaturan",
+          footerTitle: "Pengunduh Musik YouTube",
+          footerDescription:
+            "Alat untuk mengunduh musik dari YouTube dengan kualitas tinggi. Hanya untuk konten yang Anda miliki haknya.",
+          footerCredits:
+            '&copy; 2024 Pengunduh Musik YouTube<br/>Dibuat dengan <i class="fas fa-heart text-danger"></i> untuk pecinta musik',
+          alertEnterUrl: "Silakan masukkan URL YouTube",
+          alertFetchFailed: "Gagal mengambil informasi video",
+          alertStartFailed: "Gagal memulai unduhan",
+          alertSettingsSaved: "Pengaturan disimpan!",
+          alertSelectFile: "Silakan pilih sebuah file",
+          alertBatchStartFailed: "Gagal memulai unduhan massal",
+          confirmClearHistory:
+            "Apakah Anda yakin ingin menghapus riwayat unduhan?",
+          statusCompleted: "selesai",
+          statusError: "gagal",
+          statusProcessing: "memproses",
+          downloading: "Mengunduh...",
+          filePrefix: "File: ",
+          errorPrefix: "Kesalahan: ",
+          qualityPrefix: "Kualitas: ",
+          sizePrefix: "Ukuran: ",
+          noHistory: "Tidak ada riwayat unduhan",
+          ffmpegAvailable: "Konversi kualitas tinggi tersedia",
+          ffmpegNotAvailable: "Instal FFmpeg untuk kualitas terbaik",
+          freeSpacePrefix: "Ruang kosong: ",
+          totalDownloadsPrefix: "Total unduhan: ",
+        },
+      };
+
+      // Initialize
+      $(document).ready(function () {
+        // Set language from storage or default
+        const savedLang = localStorage.getItem("language") || "en";
+        changeLanguage(savedLang);
+
+        // Load quality options
+        $.getJSON("/api/system-status", function (data) {
+          updateSystemStatus(data);
+        });
+
+        // Load history
+        loadHistory();
+
+        // Tab navigation
+        $(".nav-link").click(function (e) {
+          e.preventDefault();
+          $(".nav-link").removeClass("active");
+          $(this).addClass("active");
+          $(".tab-content").hide();
+          $($(this).attr("href")).show();
+        });
+
+        // Fetch video info
+        $("#fetchInfoBtn").click(fetchVideoInfo);
+        $("#youtubeUrl").keypress(function (e) {
+          if (e.which == 13) fetchVideoInfo();
+        });
+
+        // Download button
+        $("#downloadBtn").click(startDownload);
+
+        // Batch download
+        $("#startBatchBtn").click(startBatchDownload);
+
+        // Settings
+        $("#saveSettingsBtn").click(function () {
+          alert(getTranslation("alertSettingsSaved"));
+        });
+
+        // Clear history
+        $("#clearHistoryBtn").click(clearHistory);
+
+        // Load quality options from server (if available)
+        $.ajax({
+          url: "/api/system-status",
+          method: "GET",
+          success: function (data) {
+            // This part is handled by updateSystemStatus now
+          },
+        });
+      });
+
+      function fetchVideoInfo() {
+        const url = $("#youtubeUrl").val().trim();
+        if (!url) {
+          alert(getTranslation("alertEnterUrl"));
+          return;
+        }
+
+        $("#fetchInfoBtn")
+          .prop("disabled", true)
+          .html(
+            `<i class="fas fa-spinner fa-spin"></i> ${getTranslation(
+              "loadingStatus"
+            ).replace("...", "")}`
+          );
+
+        $.ajax({
+          url: "/api/video-info",
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ url: url }),
+          success: function (data) {
+            if (data.success) {
+              // Display video info
+              $("#videoThumbnail").attr("src", data.thumbnail);
+              $("#videoTitle").text(data.title);
+              $("#videoChannel").text(
+                getTranslation("channelPrefix") + data.channel
+              );
+              $("#videoDuration").text(formatDuration(data.duration));
+              $("#videoViews").text(
+                formatNumber(data.view_count) + getTranslation("viewsSuffix")
+              );
+              $("#videoDescription").text(data.description);
+              $("#videoPreview").show();
+
+              // Display quality options
+              displayQualityOptions(data.audio_formats);
+              $("#qualitySelection").show();
+            } else {
+              alert(getTranslation("errorPrefix") + data.error);
+            }
+          },
+          error: function () {
+            alert(getTranslation("alertFetchFailed"));
+          },
+          complete: function () {
+            $("#fetchInfoBtn")
+              .prop("disabled", false)
+              .html('<i class="fas fa-search"></i> Fetch Info');
+          },
+        });
+      }
+
+      function displayQualityOptions(formats) {
+        const container = $("#qualityOptions");
+        container.empty();
+
+        // Default quality options
+        const qualityMap = {
+          mp3_320: { name: "MP3 Ultra HD", desc: "320kbps - Best quality" },
+          mp3_256: {
+            name: "MP3 High Quality",
+            desc: "256kbps - Great balance",
+          },
+          mp3_192: { name: "MP3 Standard", desc: "192kbps - Good quality" },
+          flac: { name: "FLAC Lossless", desc: "1411kbps - Studio quality" },
+          m4a: { name: "M4A/AAC", desc: "256kbps - Apple compatible" },
+          opus: { name: "OPUS", desc: "160kbps - Efficient" },
+          wav: { name: "WAV", desc: "1411kbps - Uncompressed" },
+        };
+
+        for (const [key, info] of Object.entries(qualityMap)) {
+          const isActive = key === selectedFormat ? "active" : "";
+          container.append(`
+                    <div class="quality-badge ${isActive}" data-format="${key}" 
+                         onclick="selectQuality('${key}')"
+                         title="${info.desc}">
+                        ${info.name}
+                    </div>
+                `);
+        }
+      }
+
+      function selectQuality(format) {
+        selectedFormat = format;
+        $(".quality-badge").removeClass("active");
+        $(`.quality-badge[data-format="${format}"]`).addClass("active");
+      }
+
+      function startDownload() {
+        const url = $("#youtubeUrl").val().trim();
+        if (!url) {
+          alert(getTranslation("alertEnterUrl"));
+          return;
+        }
+
+        $("#downloadBtn")
+          .prop("disabled", true)
+          .html(
+            `<i class="fas fa-spinner fa-spin"></i> ${getTranslation(
+              "progressWaiting"
+            ).replace("...", "")}`
+          );
+        $("#downloadProgress").show();
+
+        $.ajax({
+          url: "/api/download",
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({
+            url: url,
+            format: selectedFormat,
+          }),
+          success: function (data) {
+            if (data.success) {
+              currentJobId = data.job_id;
+              monitorDownload(data.job_id);
+            } else {
+              alert(getTranslation("errorPrefix") + data.error);
+              $("#downloadBtn")
+                .prop("disabled", false)
+                .html('<i class="fas fa-download"></i> Start Download');
+            }
+          },
+          error: function () {
+            alert(getTranslation("alertStartFailed"));
+            $("#downloadBtn")
+              .prop("disabled", false)
+              .html('<i class="fas fa-download"></i> Start Download');
+          },
+        });
+      }
+
+      function monitorDownload(jobId) {
+        const interval = setInterval(function () {
+          $.getJSON(`/api/status/${jobId}`, function (data) {
+            if (data.status === "completed") {
+              clearInterval(interval);
+              $("#progressBar").css("width", "100%");
+              $("#progressText").html(`
+                            <i class="fas fa-check-circle text-success"></i> ${getTranslation(
+                              "downloadCompleteText"
+                            )}
+                            <br><small>${getTranslation("filePrefix")}${
+                data.filename
+              }</small>
+                        `);
+              $("#downloadComplete").show();
+              $("#downloadLink").attr("href", `/api/download-file/${jobId}`);
+              $("#downloadBtn")
+                .prop("disabled", false)
+                .html(
+                  `<i class="fas fa-download"></i> ${getTranslation(
+                    "startDownloadBtn"
+                  )}`
+                ); // Reset button
+              loadHistory(); // Refresh history
+            } else if (data.status === "error") {
+              clearInterval(interval);
+              $("#progressText").html(`
+                            <i class="fas fa-times-circle text-danger"></i> ${getTranslation(
+                              "errorPrefix"
+                            )}${data.message}
+                        `);
+              $("#downloadBtn")
+                .prop("disabled", false)
+                .html(
+                  `<i class="fas fa-download"></i> ${getTranslation(
+                    "startDownloadBtn"
+                  )}`
+                );
+            } else if (data.status === "processing") {
+              const progress = data.progress || 0;
+              $("#progressBar").css("width", progress + "%");
+              $("#progressText").text(
+                data.message || getTranslation("downloading")
+              );
+            }
+          });
+        }, 1000);
+      }
+
+      function startBatchDownload() {
+        const fileInput = $("#batchFile")[0];
+        const quality = $("#batchQuality").val();
+
+        if (!fileInput.files.length) {
+          alert(getTranslation("alertSelectFile"));
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("format", quality);
+
+        $("#startBatchBtn")
+          .prop("disabled", true)
+          .html(
+            `<i class="fas fa-spinner fa-spin"></i> ${getTranslation(
+              "statusProcessing"
+            )}...`
+          );
+        $("#batchProgress").show();
+
+        $.ajax({
+          url: "/api/batch-download",
+          method: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (data) {
+            if (data.success) {
+              $("#batchJobs").html(`
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Memulai ${data.count} unduhan
+                            </div>
+                        `);
+
+              // Monitor batch jobs
+              data.job_ids.forEach((jobId) => {
+                monitorBatchJob(jobId);
+              });
+            } else {
+              alert(getTranslation("errorPrefix") + data.error);
+            }
+          },
+          error: function () {
+            alert(getTranslation("alertBatchStartFailed"));
+          },
+          complete: function () {
+            $("#startBatchBtn")
+              .prop("disabled", false)
+              .html(
+                `<i class="fas fa-play"></i> ${getTranslation("startBatchBtn")}`
+              );
+          },
+        });
+      }
+
+      function monitorBatchJob(jobId) {
+        const interval = setInterval(function () {
+          $.getJSON(`/api/status/${jobId}`, function (data) {
+            if (data.status === "completed" || data.status === "error") {
+              clearInterval(interval);
+              const statusText = getTranslation(
+                `status${
+                  data.status.charAt(0).toUpperCase() + data.status.slice(1)
+                }`
+              );
+              const icon =
+                data.status === "completed" ? "check-circle" : "times-circle";
+
+              $("#batchJobs").append(`
+                            <div class="download-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>${data.title || "Unknown"}</span>
+                                    <span class="status-badge status-${
+                                      data.status
+                                    }">
+                                        <i class="fas fa-${icon}"></i> ${statusText}
+                                    </span>
+                                </div>
+                                ${
+                                  data.status === "completed"
+                                    ? `<small><a href="/api/download-file/${jobId}">${getTranslation(
+                                        "startDownloadBtn"
+                                      ).replace("Start ", "")}</a></small>`
+                                    : `<small class="text-danger">${getTranslation(
+                                        "errorPrefix"
+                                      )}${data.message}</small>`
+                                }
+                            </div>
+                        `);
+            }
+          });
+        }, 2000);
+      }
+
+      function loadHistory() {
+        $.getJSON("/api/history", function (data) {
+          const container = $("#historyList");
+          container.empty();
+
+          if (data.history && data.history.length > 0) {
+            data.history.forEach((item) => {
+              const date = new Date(item.timestamp);
+              const formattedDate =
+                date.toLocaleDateString() + " " + date.toLocaleTimeString();
+
+              container.append(`
+                            <div class="download-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>${item.title}</strong>
+                                    <small class="text-muted">${formattedDate}</small>
+                                </div>
+                                <small class="text-muted">${getTranslation(
+                                  "qualityPrefix"
+                                )}${item.quality}</small>
+                                <br>
+                                <small class="text-muted">${getTranslation(
+                                  "sizePrefix"
+                                )}${formatFileSize(item.filesize)}</small>
+                            </div>
+                        `);
+            });
+          } else {
+            container.html(
+              `<p class="text-center text-muted">${getTranslation(
+                "noHistory"
+              )}</p>`
+            );
+          }
+        });
+      }
+
+      function clearHistory() {
+        if (confirm(getTranslation("confirmClearHistory"))) {
+          $.ajax({
+            url: "/api/clear-history",
+            method: "POST",
+            success: function () {
+              loadHistory();
+            },
+          });
+        }
+      }
+
+      function updateSystemStatus(data) {
+        const container = $("#systemStatus");
+        container.empty();
+
+        if (data.ffmpeg_available) {
+          container.append(
+            `<p class="text-success small"><i class="fas fa-check-circle"></i> ${getTranslation(
+              "ffmpegAvailable"
+            )}</p>`
+          );
+        } else {
+          container.append(
+            `<p class="text-warning small"><i class="fas fa-exclamation-triangle"></i> ${getTranslation(
+              "ffmpegNotAvailable"
+            )}</p>`
+          );
+        }
+
+        if (data.disk_space) {
+          const freeGB = (data.disk_space.free / 1024 ** 3).toFixed(1);
+          container.append(
+            `<p class="small"><i class="fas fa-hdd"></i> ${getTranslation(
+              "freeSpacePrefix"
+            )}${freeGB} GB</p>`
+          );
+        }
+
+        container.append(
+          `<p class="small"><i class="fas fa-download"></i> ${getTranslation(
+            "totalDownloadsPrefix"
+          )}${data.total_downloads || 0}</p>`
+        );
+      }
+
+      // Translation functions
+      function getTranslation(key) {
+        const lang = localStorage.getItem("language") || "en";
+        return translations[lang][key] || translations["en"][key] || key;
+      }
+
+      function changeLanguage(lang) {
+        if (!translations[lang]) return;
+        localStorage.setItem("language", lang);
+
+        $("[data-translate-key]").each(function () {
+          const key = $(this).data("translate-key");
+          const translation = getTranslation(key);
+          if (translation) {
+            $(this).html(translation);
+          }
+        });
+
+        $("[data-translate-key-placeholder]").each(function () {
+          const key = $(this).data("translate-key-placeholder");
+          const translation = getTranslation(key);
+          if (translation) {
+            $(this).attr("placeholder", translation);
+          }
+        });
+
+        // Re-render dynamic parts that need translation
+        updateSystemStatus({
+          /* pass existing data if available */
+        });
+        loadHistory();
+      }
+
+      // Utility functions
+      function formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+
+        if (hours > 0) {
+          return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
+            .toString()
+            .padStart(2, "0")}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, "0")}`;
+      }
+
+      function formatNumber(num) {
+        if (num >= 1000000) {
+          return (num / 1000000).toFixed(1) + "M";
+        }
+        if (num >= 1000) {
+          return (num / 1000).toFixed(1) + "K";
+        }
+        return num;
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return "0 Bytes";
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+      }
+    </script>
+  </body>
+</html>
