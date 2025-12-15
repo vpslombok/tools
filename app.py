@@ -6,21 +6,21 @@ import json
 import yt_dlp
 import subprocess
 import tempfile
+import uuid
 import threading
 from datetime import datetime
 from pathlib import Path
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+
+load_dotenv() # Muat variabel dari file .env
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a-default-secret-key-for-dev')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
-app.config['DOWNLOAD_FOLDER'] = 'static/downloads'
-app.config['TEMP_FOLDER'] = 'static/temp'
+app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
 app.config['ALLOWED_EXTENSIONS'] = {'txt'}
 
-# Create necessary directories
-for folder in [app.config['DOWNLOAD_FOLDER'], app.config['TEMP_FOLDER']]:
-    Path(folder).mkdir(parents=True, exist_ok=True)
 
 # In-memory storage for downloads (in production, use database)
 download_history = []
@@ -111,14 +111,10 @@ class YouTubeDownloader:
             
             quality = self.quality_options[format_key]
             
-            # Create user-specific folder
-            user_folder = os.path.join(app.config['DOWNLOAD_FOLDER'], user_ip)
-            Path(user_folder).mkdir(parents=True, exist_ok=True)
-            
             # Configure yt-dlp options
             ydl_opts = {
                 'format': 'bestaudio/best',
-                'outtmpl': os.path.join(user_folder, '%(title)s.%(ext)s'),
+                'outtmpl': os.path.join(tempfile.gettempdir(), f'{job_id}.%(ext)s'),
                 'quiet': False,
                 'no_warnings': False,
                 'progress_hooks': [self.progress_hook],
@@ -248,7 +244,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def generate_job_id():
-    return datetime.now().strftime('%Y%m%d%H%M%S') + str(hash(datetime.now()))
+    return str(uuid.uuid4())
 
 def get_client_ip():
     if request.headers.get('X-Forwarded-For'):
@@ -321,13 +317,15 @@ def download_file(job_id):
         filepath = active_downloads[job_id]['filepath']
         filename = active_downloads[job_id]['filename']
         
+        # Menentukan mimetype secara dinamis
+        mimetype = 'application/octet-stream'
+        if '.' in filename:
+            ext = filename.rsplit('.', 1)[1].lower()
+            mimetypes = {'mp3': 'audio/mpeg', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'opus': 'audio/opus'}
+            mimetype = mimetypes.get(ext, 'application/octet-stream')
+
         if os.path.exists(filepath):
-            return send_file(
-                filepath,
-                as_attachment=True,
-                download_name=filename,
-                mimetype='audio/mpeg' if filename.endswith('.mp3') else 'audio/mp4'
-            )
+            return send_file(filepath, as_attachment=True, download_name=filename, mimetype=mimetype)
     
     return "File not found", 404
 
@@ -347,7 +345,7 @@ def batch_download():
         return jsonify({'success': False, 'error': 'Invalid file type'})
     
     # Save uploaded file
-    temp_path = os.path.join(app.config['TEMP_FOLDER'], secure_filename(file.filename))
+    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
     file.save(temp_path)
     
     # Read URLs from file
@@ -436,17 +434,6 @@ def not_found(e):
 def server_error(e):
     return render_template('500.html'), 500
 
-# Template files
-@app.route('/templates/<template_name>')
-def serve_template(template_name):
-    """Serve template files"""
-    if template_name in ['index.html', '404.html', '500.html']:
-        return render_template(template_name)
-    return "Template not found", 404
-
 if __name__ == '__main__':
-    # Create templates directory if not exists
-    Path('templates').mkdir(exist_ok=True)
-    
     # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)
