@@ -4,4 +4,4 @@
 aptPkgs = ["ffmpeg"]
 
 [start]
-cmd = "gunicorn --worker-tmp-dir /dev/shm app:app"
+cmd = "flask init-db && gunicorn --worker-tmp-dir /dev/shm app:app"

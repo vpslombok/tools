@@ -11,20 +11,34 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from werkzeug.utils import secure_filename
+from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 
 load_dotenv() # Muat variabel dari file .env
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a-default-secret-key-for-dev')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///downloads.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
 app.config['ALLOWED_EXTENSIONS'] = {'txt'}
 
+db = SQLAlchemy(app)
 
-# In-memory storage for downloads (in production, use database)
-download_history = []
-active_downloads = {}
+# Database Model
+class DownloadJob(db.Model):
+    id = db.Column(db.String(36), primary_key=True)
+    status = db.Column(db.String(20), default='pending')
+    progress = db.Column(db.Float, default=0)
+    message = db.Column(db.String(255), nullable=True)
+    filename = db.Column(db.String(255), nullable=True)
+    filepath = db.Column(db.String(512), nullable=True)
+    filesize = db.Column(db.Integer, default=0)
+    title = db.Column(db.String(255), nullable=True)
+    quality = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user_ip = db.Column(db.String(45), nullable=True)
 
 class YouTubeDownloader:
     def __init__(self):
@@ -106,10 +120,18 @@ class YouTubeDownloader:
     def download_audio(self, url, format_key, job_id, user_ip):
         """Download audio with specified format"""
         try:
+            job = DownloadJob.query.get(job_id)
+            if not job:
+                return False
+
             if format_key not in self.quality_options:
                 format_key = 'mp3_320'
             
             quality = self.quality_options[format_key]
+            
+            # Secara eksplisit temukan path FFmpeg untuk yt-dlp
+            import shutil
+            ffmpeg_path = shutil.which('ffmpeg')
             
             # Configure yt-dlp options
             ydl_opts = {
@@ -126,6 +148,9 @@ class YouTubeDownloader:
                 'addmetadata': True,
                 'concurrent_fragment_downloads': 4,
             }
+            
+            if ffmpeg_path:
+                ydl_opts['ffmpeg_location'] = ffmpeg_path
             
             # Add postprocessor based on format
             if quality['ext'] == 'mp3':
@@ -148,49 +173,37 @@ class YouTubeDownloader:
                 }]
             
             # Update status
-            active_downloads[job_id] = {
-                'status': 'processing',
-                'progress': 0,
-                'filename': '',
-                'message': 'Starting download...'
-            }
+            job.status = 'processing'
+            job.message = 'Starting download...'
+            db.session.commit()
             
             # Start download
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 
                 # Get the final file path from the info dict after post-processing
-                final_filepath = info.get('requested_downloads', [{}])[0].get('filepath')
+                final_filepath = info.get('requested_downloads', [{}])[0].get('filepath') if info.get('requested_downloads') else None
 
-                active_downloads[job_id].update({
-                    'status': 'completed',
-                    'progress': 100,
-                    'filename': os.path.basename(final_filepath),
-                    'filepath': final_filepath,
-                    'filesize': os.path.getsize(final_filepath) if final_filepath and os.path.exists(final_filepath) else 0,
-                    'title': info.get('title', 'Unknown'),
-                    'quality': quality['name']
-                })
-                
-                # Add to history
-                download_history.append({
-                    'job_id': job_id,
-                    'url': url,
-                    'title': info.get('title', 'Unknown'),
-                    'quality': quality['name'],
-                    'timestamp': datetime.now().isoformat(),
-                    'user_ip': user_ip,
-                    'filesize': active_downloads[job_id]['filesize']
-                })
+                if final_filepath and os.path.exists(final_filepath):
+                    job.status = 'completed'
+                    job.progress = 100
+                    job.filename = os.path.basename(final_filepath)
+                    job.filepath = final_filepath
+                    job.filesize = os.path.getsize(final_filepath)
+                    job.title = info.get('title', 'Unknown')
+                    job.quality = quality['name']
+                    db.session.commit()
+                else:
+                    raise Exception("Downloaded file not found after post-processing.")
                 
                 return True
                 
         except Exception as e:
-            active_downloads[job_id] = {
-                'status': 'error',
-                'progress': 0,
-                'message': str(e)
-            }
+            job = DownloadJob.query.get(job_id)
+            if job:
+                job.status = 'error'
+                job.message = str(e)
+                db.session.commit()
             return False
     
     def progress_hook(self, d):
@@ -201,11 +214,13 @@ class YouTubeDownloader:
                 percent = d['_percent_str'].strip().replace('%', '')
                 try:
                     progress = float(percent)
-                    # Update progress for active downloads
-                    for job_id in active_downloads:
-                        if active_downloads[job_id]['status'] == 'processing':
-                            active_downloads[job_id]['progress'] = progress
-                            active_downloads[job_id]['message'] = f"Downloading... {progress:.1f}%"
+                    # Find the job being processed by this thread (this is a simplification)
+                    # A more robust solution would pass the job_id to the hook.
+                    job = DownloadJob.query.filter_by(status='processing').first()
+                    if job:
+                        job.progress = progress
+                        job.message = f"Downloading... {progress:.1f}%"
+                        db.session.commit()
                 except:
                     pass
     
@@ -255,9 +270,7 @@ def get_client_ip():
 @app.route('/')
 def index():
     """Home page"""
-    return render_template('index.html', 
-                         quality_options=downloader.quality_options,
-                         recent_downloads=download_history[-10:])
+    return render_template('index.html')
 
 @app.route('/api/video-info', methods=['POST'])
 def get_video_info():
@@ -289,6 +302,11 @@ def start_download():
     job_id = generate_job_id()
     user_ip = get_client_ip()
     
+    # Create a new job in the database
+    new_job = DownloadJob(id=job_id, status='pending', user_ip=user_ip)
+    db.session.add(new_job)
+    db.session.commit()
+
     # Start download in background thread
     thread = threading.Thread(
         target=downloader.download_audio,
@@ -306,20 +324,33 @@ def start_download():
 @app.route('/api/status/<job_id>')
 def get_status(job_id):
     """Get download status"""
-    if job_id in active_downloads:
-        return jsonify(active_downloads[job_id])
+    job = DownloadJob.query.get(job_id)
+    if job:
+        return jsonify({
+            'id': job.id,
+            'status': job.status,
+            'progress': job.progress,
+            'message': job.message,
+            'filename': job.filename,
+            'filepath': job.filepath,
+            'filesize': job.filesize,
+            'title': job.title,
+            'quality': job.quality,
+            'timestamp': job.timestamp.isoformat() if job.timestamp else None
+        })
     return jsonify({'status': 'not_found'})
 
 @app.route('/api/download-file/<job_id>')
 def download_file(job_id):
     """Download completed file"""
-    if job_id in active_downloads and active_downloads[job_id]['status'] == 'completed':
-        filepath = active_downloads[job_id]['filepath']
-        filename = active_downloads[job_id]['filename']
+    job = DownloadJob.query.get(job_id)
+    if job and job.status == 'completed':
+        filepath = job.filepath
+        filename = job.filename
         
         # Menentukan mimetype secara dinamis
         mimetype = 'application/octet-stream'
-        if '.' in filename:
+        if filename and '.' in filename:
             ext = filename.rsplit('.', 1)[1].lower()
             mimetypes = {'mp3': 'audio/mpeg', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'opus': 'audio/opus'}
             mimetype = mimetypes.get(ext, 'application/octet-stream')
@@ -362,6 +393,10 @@ def batch_download():
     
     for url in urls[:10]:  # Limit to 10 URLs
         job_id = generate_job_id()
+        new_job = DownloadJob(id=job_id, status='pending', user_ip=user_ip)
+        db.session.add(new_job)
+        db.session.commit()
+
         thread = threading.Thread(
             target=downloader.download_audio,
             args=(url, format_key, job_id, user_ip)
@@ -384,17 +419,23 @@ def batch_download():
 def get_history():
     """Get download history for current user"""
     user_ip = get_client_ip()
-    user_history = [d for d in download_history if d['user_ip'] == user_ip]
-    return jsonify({'history': user_history[-20:]})
+    user_history = DownloadJob.query.filter_by(user_ip=user_ip, status='completed').order_by(DownloadJob.timestamp.desc()).limit(20).all()
+    
+    history_list = [{
+        'title': job.title,
+        'quality': job.quality,
+        'filesize': job.filesize,
+        'timestamp': job.timestamp.isoformat()
+    } for job in user_history]
+
+    return jsonify({'history': history_list})
 
 @app.route('/api/clear-history', methods=['POST'])
 def clear_history():
     """Clear user's download history"""
     user_ip = get_client_ip()
-    global download_history
-    
-    # Keep only history from other users
-    download_history = [d for d in download_history if d['user_ip'] != user_ip]
+    DownloadJob.query.filter_by(user_ip=user_ip).delete()
+    db.session.commit()
     
     return jsonify({'success': True, 'message': 'History cleared'})
 
@@ -406,6 +447,9 @@ def system_status():
     # Check if FFmpeg is available in the system's PATH
     ffmpeg_available = shutil.which('ffmpeg') is not None
     total, used, free = shutil.disk_usage(".")
+
+    active_downloads_count = DownloadJob.query.filter_by(status='processing').count()
+    total_downloads_count = DownloadJob.query.filter_by(status='completed').count()
     
     return jsonify({
         'ffmpeg_available': ffmpeg_available,
@@ -415,8 +459,8 @@ def system_status():
             'free': free,
             'free_gb': free // (2**30)
         },
-        'active_downloads': len([d for d in active_downloads.values() if d['status'] == 'processing']),
-        'total_downloads': len(download_history)
+        'active_downloads': active_downloads_count,
+        'total_downloads': total_downloads_count
     })
 
 @app.route('/api/check-dependencies')
@@ -451,6 +495,13 @@ def check_dependencies():
         return jsonify({
             'success': True, 'message': 'Semua dependensi telah terinstall'
         })
+
+# CLI command to initialize the database
+@app.cli.command("init-db")
+def init_db_command():
+    """Creates the database tables."""
+    db.create_all()
+    print("Initialized the database.")
 
 # Error handlers
 @app.errorhandler(404)

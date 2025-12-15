@@ -3,5 +3,5 @@ gunicorn
 requests
 python-dotenv
 sqlalchemy
-psycopg2-binary
 yt-dlp
+Flask-SQLAlchemy
