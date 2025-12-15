@@ -1,0 +1,7 @@
+# Konfigurasi untuk Nixpacks (Build system Railway)
+
+[phases.setup]
+aptPkgs = ["ffmpeg"]
+
+[start]
+cmd = "gunicorn --worker-tmp-dir /dev/shm app:app"
