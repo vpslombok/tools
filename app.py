@@ -297,17 +297,20 @@ def download_file(job_id):
     """Download completed file"""
     if job_id in active_downloads and active_downloads[job_id]['status'] == 'completed':
         filepath = active_downloads[job_id]['filepath']
-        filename = active_downloads[job_id]['filename']
+        original_filename = active_downloads[job_id]['filename'] # e.g., UUID.mp3
+        song_title = active_downloads[job_id].get('title', 'download')
+        
+        # Sanitize the song title to create a valid filename
+        file_extension = os.path.splitext(original_filename)[1]
+        download_name = f"{secure_filename(song_title)}{file_extension}"
         
         # Menentukan mimetype secara dinamis
         mimetype = 'application/octet-stream'
-        if '.' in filename:
-            ext = filename.rsplit('.', 1)[1].lower()
-            mimetypes = {'mp3': 'audio/mpeg', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'opus': 'audio/opus'}
-            mimetype = mimetypes.get(ext, 'application/octet-stream')
+        mimetypes = {'mp3': 'audio/mpeg', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'opus': 'audio/opus'}
+        mimetype = mimetypes.get(file_extension.strip('.'), 'application/octet-stream')
 
         if os.path.exists(filepath):
-            return send_file(filepath, as_attachment=True, download_name=filename, mimetype=mimetype)
+            return send_file(filepath, as_attachment=True, download_name=download_name, mimetype=mimetype)
     
     return "File not found", 404
 
