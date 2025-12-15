@@ -961,7 +961,7 @@
         for (const [key, info] of Object.entries(qualityMap)) {
           const isActive = key === selectedFormat ? "active" : "";
           container.append(`
-                    <div class="quality-badge ${isActive}" data-format="${key}" 
+                    <div class="quality-badge ${isActive}" data-format="${key}"
                          onclick="selectQuality('${key}')"
                          title="${info.desc}">
                         ${info.name}
@@ -1248,6 +1248,29 @@
         );
       }
 
+      function checkDependencies() {
+        $.getJSON("/api/check-dependencies", function (data) {
+          const systemStatusDiv = $("#systemStatus");
+
+          if (!data.success) {
+            let message = `<p class="text-danger small"><i class="fas fa-exclamation-triangle"></i> ${
+              data.message
+            }: ${data.missing_packages.join(", ")}</p>`;
+            systemStatusDiv.append(message);
+          } else {
+            let message = `<p class="text-success small"><i class="fas fa-check-circle"></i> ${data.message}</p>`;
+            systemStatusDiv.append(message);
+          }
+        });
+      }
+
+      // Call this function on document ready
+      $(document).ready(function () {
+        // Existing code ...
+        checkDependencies();
+
+      });
+
       // Translation functions
       function getTranslation(key) {
         const lang = localStorage.getItem("language") || "en";
@@ -1314,4 +1337,5 @@
       }
     </script>
   </body>
+
 </html>

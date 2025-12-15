@@ -425,6 +425,39 @@ def system_status():
         'total_downloads': len(download_history)
     })
 
+@app.route('/api/check-dependencies')
+def check_dependencies():
+    """Check if required Python packages are installed"""
+    required_packages = [
+        'flask',
+        'gunicorn',
+        'requests',
+        'python-dotenv',
+        'sqlalchemy',
+        'psycopg2-binary',
+        'yt-dlp'
+    ]
+    
+    installed_packages = []
+    try:
+        import pkg_resources
+        installed_packages = [dist.project_name.lower() for dist in pkg_resources.working_set]
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    
+    missing_packages = [pkg for pkg in required_packages if pkg not in installed_packages]
+    
+    if missing_packages:
+        return jsonify({
+            'success': False,
+            'message': 'Beberapa dependensi belum terinstall',
+            'missing_packages': missing_packages
+        })
+    else:
+        return jsonify({
+            'success': True, 'message': 'Semua dependensi telah terinstall'
+        })
+
 # Error handlers
 @app.errorhandler(404)
 def not_found(e):
