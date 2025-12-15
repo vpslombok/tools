@@ -4,4 +4,3 @@ requests
 python-dotenv
 sqlalchemy
 yt-dlp
-Flask-SQLAlchemy
