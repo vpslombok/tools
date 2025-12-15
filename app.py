@@ -122,9 +122,6 @@ class YouTubeDownloader:
                 'quiet': False,
                 'no_warnings': False,
                 'progress_hooks': [self.progress_hook],
-                'postprocessor_args': {
-                    'ffmpeg': self.get_ffmpeg_args(quality)
-                },
                 'writethumbnail': True,
                 'embedthumbnail': True,
                 'addmetadata': True,
@@ -140,7 +137,7 @@ class YouTubeDownloader:
                 ydl_opts['postprocessors'] = [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
-                    'preferredquality': '0',
+                    'preferredquality': quality['bitrate'], # Gunakan bitrate langsung
                 }, {
                     'key': 'EmbedThumbnail',
                 }, {
@@ -216,34 +213,6 @@ class YouTubeDownloader:
                             active_downloads[job_id]['message'] = f"Downloading... {progress:.1f}%"
                 except:
                     pass
-    
-    def get_ffmpeg_args(self, quality):
-        """Get FFmpeg arguments for specific quality"""
-        if quality['ext'] == 'mp3':
-            return [
-                '-b:a', quality['bitrate'],
-                '-codec:a', 'libmp3lame',
-                '-q:a', '0',
-                '-ar', '44100',
-                '-ac', '2'
-            ]
-        elif quality['ext'] == 'flac':
-            return [
-                '-compression_level', '12',
-                '-codec:a', 'flac',
-                '-ar', '44100',
-                '-ac', '2'
-            ]
-        elif quality['ext'] == 'm4a':
-            return [
-                '-b:a', quality['bitrate'],
-                '-codec:a', 'aac',
-                '-cutoff', '20000',
-                '-ar', '44100',
-                '-ac', '2'
-            ]
-        else:
-            return ['-ar', '44100', '-ac', '2']
 
 downloader = YouTubeDownloader()
 
