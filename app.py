@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, send_file, redirect,
 import os
 import re
 import json
+import time
 import yt_dlp
 import subprocess
 import tempfile
@@ -30,13 +31,17 @@ active_downloads = {}
 class YouTubeDownloader:
     def __init__(self):
         self.quality_options = {
-            'mp3_320': {'name': 'MP3 Ultra HD', 'bitrate': '320k', 'ext': 'mp3'},
-            'mp3_256': {'name': 'MP3 High Quality', 'bitrate': '256k', 'ext': 'mp3'},
-            'mp3_192': {'name': 'MP3 Standard', 'bitrate': '192k', 'ext': 'mp3'},
-            'flac': {'name': 'FLAC Lossless', 'bitrate': '1411k', 'ext': 'flac'},
-            'm4a': {'name': 'M4A/AAC', 'bitrate': '256k', 'ext': 'm4a'},
-            'opus': {'name': 'OPUS', 'bitrate': '160k', 'ext': 'opus'},
-            'wav': {'name': 'WAV', 'bitrate': '1411k', 'ext': 'wav'}
+            'mp4_1080': {'name': 'MP4 Full HD (1080p)', 'height': 1080, 'ext': 'mp4', 'type': 'video'},
+            'mp4_720': {'name': 'MP4 HD (720p)', 'height': 720, 'ext': 'mp4', 'type': 'video'},
+            'mp4_480': {'name': 'MP4 SD (480p)', 'height': 480, 'ext': 'mp4', 'type': 'video'},
+            'mp4_360': {'name': 'MP4 Low (360p)', 'height': 360, 'ext': 'mp4', 'type': 'video'},
+            'mp3_320': {'name': 'MP3 Ultra HD', 'bitrate': '320k', 'ext': 'mp3', 'type': 'audio'},
+            'mp3_256': {'name': 'MP3 High Quality', 'bitrate': '256k', 'ext': 'mp3', 'type': 'audio'},
+            'mp3_192': {'name': 'MP3 Standard', 'bitrate': '192k', 'ext': 'mp3', 'type': 'audio'},
+            'flac': {'name': 'FLAC Lossless', 'bitrate': '1411k', 'ext': 'flac', 'type': 'audio'},
+            'm4a': {'name': 'M4A/AAC', 'bitrate': '256k', 'ext': 'm4a', 'type': 'audio'},
+            'opus': {'name': 'OPUS', 'bitrate': '160k', 'ext': 'opus', 'type': 'audio'},
+            'wav': {'name': 'WAV', 'bitrate': '1411k', 'ext': 'wav', 'type': 'audio'}
         }
     
     def extract_video_id(self, url):
@@ -55,14 +60,9 @@ class YouTubeDownloader:
         return None
     
     def validate_url(self, url):
-        """Validate YouTube URL"""
-        patterns = [
-            r'^https?://(www\.|music\.)?youtube\.com/watch\?v=',
-            r'^https?://youtu\.be/',
-            r'^https?://(www\.)?youtube\.com/embed/',
-            r'^https?://(www\.)?youtube\.com/shorts/'
-        ]
-        return any(re.search(pattern, url) for pattern in patterns)
+        """Validate URL (Generic)"""
+        # Allow any http/https URL, let yt-dlp handle specific validation
+        return url.strip().startswith(('http://', 'https://'))
     
     def get_video_info(self, url):
         """Get video information without downloading"""
@@ -71,6 +71,12 @@ class YouTubeDownloader:
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': False,
+                # Tambahkan User-Agent untuk menghindari blokir TikTok/Instagram
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                }
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -104,13 +110,14 @@ class YouTubeDownloader:
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
-    def download_audio(self, url, format_key, job_id, user_ip):
-        """Download audio with specified format"""
+    def download_media(self, url, format_key, job_id, user_ip):
+        """Download media (audio/video) with specified format"""
         try:
             if format_key not in self.quality_options:
                 format_key = 'mp3_320'
             
             quality = self.quality_options[format_key]
+            is_video = quality.get('type') == 'video'
             
             # Secara eksplisit temukan path FFmpeg untuk yt-dlp
             import shutil
@@ -122,7 +129,7 @@ class YouTubeDownloader:
             
             # Configure yt-dlp options
             ydl_opts = {
-                'format': 'bestaudio/best',
+                'format': 'bestaudio/best', # Default, overridden below
                 'outtmpl': os.path.join(tempfile.gettempdir(), f'{job_id}.%(ext)s'),
                 'quiet': False,
                 'no_warnings': False,
@@ -131,31 +138,50 @@ class YouTubeDownloader:
                 'embedthumbnail': True,
                 'addmetadata': True,
                 'concurrent_fragment_downloads': 4,
+                # Tambahkan User-Agent untuk menghindari blokir TikTok/Instagram
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                }
             }
             
             if ffmpeg_path:
                 ydl_opts['ffmpeg_location'] = ffmpeg_path
 
-            
-            # Add postprocessor based on format
-            if quality['ext'] == 'mp3':
+            if is_video:
+                height = quality.get('height', 720)
+                ydl_opts.update({
+                    'format': f'bestvideo[height<={height}]+bestaudio/best[height<={height}]',
+                    'merge_output_format': 'mp4',
+                })
+                # Video postprocessors (metadata only)
                 ydl_opts['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': quality['bitrate'], # Gunakan bitrate langsung
-                }, {
                     'key': 'EmbedThumbnail',
                 }, {
                     'key': 'FFmpegMetadata',
                 }]
-            
-            elif quality['ext'] == 'flac':
-                ydl_opts['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'flac',
-                }, {
-                    'key': 'EmbedThumbnail',
-                }]
+            else:
+                # Audio postprocessors
+                ydl_opts['format'] = 'bestaudio/best'
+                if quality['ext'] == 'mp3':
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': quality['bitrate'], # Gunakan bitrate langsung
+                    }, {
+                        'key': 'EmbedThumbnail',
+                    }, {
+                        'key': 'FFmpegMetadata',
+                    }]
+                
+                elif quality['ext'] == 'flac':
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'flac',
+                    }, {
+                        'key': 'EmbedThumbnail',
+                    }]
             
             # Update status
             active_downloads[job_id] = {
@@ -221,6 +247,54 @@ class YouTubeDownloader:
 
 downloader = YouTubeDownloader()
 
+def cleanup_old_files():
+    """Background task to clean up old files and history every 24 hours"""
+    global download_history
+    while True:
+        try:
+            temp_dir = tempfile.gettempdir()
+            now = time.time()
+            cutoff = now - 86400  # 24 hours in seconds
+            
+            # Extensions created by the app
+            valid_extensions = {'.mp3', '.mp4', '.flac', '.m4a', '.opus', '.wav', '.webm', '.part', '.ytdl'}
+            
+            for filename in os.listdir(temp_dir):
+                file_path = os.path.join(temp_dir, filename)
+                
+                if os.path.exists(file_path) and os.path.isfile(file_path):
+                    _, ext = os.path.splitext(filename)
+                    if ext.lower() in valid_extensions:
+                        # Check if it looks like a UUID (length 36 with hyphens) - to avoid deleting system files
+                        name_part = os.path.splitext(filename)[0]
+                        if len(name_part) == 36 and '-' in name_part:
+                            if os.path.getmtime(file_path) < cutoff:
+                                try:
+                                    os.remove(file_path)
+                                except Exception as e:
+                                    print(f"Error deleting old file {filename}: {e}")
+            
+            # Cleanup history older than 24 hours
+            cutoff_dt = datetime.fromtimestamp(cutoff)
+            # Filter history keeping only items newer than cutoff
+            new_history = []
+            for item in download_history:
+                try:
+                    # Parse timestamp from string
+                    item_dt = datetime.fromisoformat(item['timestamp'])
+                    if item_dt > cutoff_dt:
+                        new_history.append(item)
+                except (ValueError, TypeError):
+                    pass
+            
+            download_history = new_history
+            
+        except Exception as e:
+            print(f"Cleanup task error: {e}")
+        
+        # Check every hour
+        time.sleep(3600)
+
 # Helper functions
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -250,7 +324,7 @@ def get_video_info():
         return jsonify({'success': False, 'error': 'URL required'})
     
     if not downloader.validate_url(url):
-        return jsonify({'success': False, 'error': 'Invalid YouTube URL'})
+        return jsonify({'success': False, 'error': 'Invalid URL'})
     
     info = downloader.get_video_info(url)
     return jsonify(info)
@@ -265,7 +339,7 @@ def start_download():
         return jsonify({'success': False, 'error': 'URL required'})
     
     if not downloader.validate_url(url):
-        return jsonify({'success': False, 'error': 'Invalid YouTube URL'})
+        return jsonify({'success': False, 'error': 'Invalid URL'})
     
     # Generate job ID
     job_id = generate_job_id()
@@ -273,7 +347,7 @@ def start_download():
     
     # Start download in background thread
     thread = threading.Thread(
-        target=downloader.download_audio,
+        target=downloader.download_media,
         args=(url, format_key, job_id, user_ip)
     )
     thread.daemon = True
@@ -306,7 +380,7 @@ def download_file(job_id):
         
         # Menentukan mimetype secara dinamis
         mimetype = 'application/octet-stream'
-        mimetypes = {'mp3': 'audio/mpeg', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'opus': 'audio/opus'}
+        mimetypes = {'mp3': 'audio/mpeg', 'flac': 'audio/flac', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'opus': 'audio/opus', 'mp4': 'video/mp4'}
         mimetype = mimetypes.get(file_extension.strip('.'), 'application/octet-stream')
 
         if os.path.exists(filepath):
@@ -348,7 +422,7 @@ def batch_download():
     for url in urls[:10]:  # Limit to 10 URLs
         job_id = generate_job_id()
         thread = threading.Thread(
-            target=downloader.download_audio,
+            target=downloader.download_media,
             args=(url, format_key, job_id, user_ip)
         )
         thread.daemon = True
@@ -452,5 +526,9 @@ def server_error(e):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
+    # Start cleanup thread
+    cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
+    cleanup_thread.start()
+    
     # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)

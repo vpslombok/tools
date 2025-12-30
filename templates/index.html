@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-translate-key="pageTitle">
-      YouTube Music Downloader - Web Version
+      Music Downloader - Web Version
     </title>
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -14,204 +14,282 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       :root {
-        --primary-color: #ff0000;
-        --secondary-color: #282828;
-        --accent-color: #3ea6ff;
-        --background-color: #0f0f0f;
-        --card-color: #212121;
-        --text-color: #ffffff;
-        --text-secondary: #aaaaaa;
+        --primary-gradient: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+        --primary-color: #ef4444;
+        --bg-color: #f3f4f6;
+        --card-bg: #ffffff;
+        --input-bg: #f9fafb;
+        --text-primary: #111827;
+        --text-secondary: #4b5563;
+        --border-color: #e5e7eb;
+        --accent-color: #3b82f6;
+        --radius-lg: 1rem;
+        --radius-md: 0.75rem;
       }
 
       body {
-        background-color: var(--background-color);
-        color: var(--text-color);
-        font-family: "Roboto", Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
         min-height: 100vh;
+        line-height: 1.6;
       }
 
       .navbar {
-        background-color: var(--secondary-color) !important;
-        border-bottom: 2px solid var(--primary-color);
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 0;
       }
 
       .logo {
-        color: var(--primary-color);
-        font-weight: bold;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
         font-size: 1.5rem;
+        letter-spacing: -0.5px;
       }
 
       .logo i {
-        color: var(--primary-color);
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
 
       .card {
-        background-color: var(--card-color);
-        border: none;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .card:hover {
+        border-color: #9ca3af;
       }
 
       .btn-primary {
-        background-color: var(--primary-color);
+        background: var(--primary-gradient);
         border: none;
-        padding: 10px 25px;
-        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        transition: all 0.3s ease;
       }
 
       .btn-primary:hover {
-        background-color: #cc0000;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(239, 68, 68, 0.35);
       }
 
-      .btn-outline-primary {
-        color: var(--accent-color);
-        border-color: var(--accent-color);
+      .btn-primary:disabled {
+        background: #d1d5db;
+        box-shadow: none;
+        transform: none;
       }
 
-      .btn-outline-primary:hover {
-        background-color: var(--accent-color);
-        color: white;
+      .form-control, .form-select {
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-md);
+        transition: all 0.2s;
       }
 
-      .form-control,
-      .form-select {
-        background-color: #383838;
-        border: 1px solid #555;
-        color: var(--text-color);
+      .form-control:focus, .form-select:focus {
+        background-color: var(--input-bg);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        color: var(--text-primary);
       }
 
-      .form-control:focus,
-      .form-select:focus {
-        background-color: #383838;
-        border-color: var(--accent-color);
-        color: var(--text-color);
-        box-shadow: 0 0 0 0.25rem rgba(62, 166, 255, 0.25);
+      /* Modern Input Group */
+      .input-group {
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 0.25rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .input-group:focus-within {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+      }
+
+      .input-group .input-group-text {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding-left: 1rem;
+      }
+
+      .input-group .form-control {
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        box-shadow: none;
+      }
+
+      .input-group .btn {
+        border-radius: var(--radius-md) !important;
+        margin: 2px;
       }
 
       .progress {
-        background-color: #383838;
-        height: 10px;
-        border-radius: 5px;
+        background-color: var(--input-bg);
+        height: 0.75rem;
+        border-radius: 1rem;
+        overflow: hidden;
       }
 
       .progress-bar {
-        background-color: var(--primary-color);
+        background: var(--primary-gradient);
       }
 
       .video-preview {
-        border-radius: 10px;
+        background-color: var(--input-bg);
+        border-radius: var(--radius-lg);
         overflow: hidden;
-        background-color: var(--secondary-color);
+        border: 1px solid var(--border-color);
       }
 
       .video-preview img {
         width: 100%;
-        height: 180px;
+        height: 200px;
         object-fit: cover;
       }
 
       .quality-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        margin-right: 5px;
-        margin-bottom: 5px;
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin: 0 0.5rem 0.5rem 0;
         cursor: pointer;
-        transition: all 0.3s;
-        border: 2px solid transparent;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
       }
 
       .quality-badge:hover {
-        transform: translateY(-2px);
+        background-color: #e5e7eb;
+        color: var(--text-primary);
       }
 
       .quality-badge.active {
-        border-color: var(--accent-color);
-        background-color: rgba(62, 166, 255, 0.1);
+        background: var(--primary-gradient);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
       }
 
       .download-item {
-        background-color: var(--card-color);
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-left: 4px solid var(--primary-color);
+        background-color: var(--input-bg);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--border-color);
+        transition: border-color 0.2s;
+      }
+
+      .download-item:hover {
+        border-color: var(--text-secondary);
       }
 
       .status-badge {
-        padding: 3px 10px;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        font-weight: 500;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
 
       .status-processing {
-        background-color: rgba(255, 193, 7, 0.2);
-        color: #ffc107;
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #fbbf24;
       }
 
       .status-completed {
-        background-color: rgba(40, 167, 69, 0.2);
-        color: #28a745;
+        background-color: rgba(34, 197, 94, 0.1);
+        color: #4ade80;
       }
 
       .status-error {
-        background-color: rgba(220, 53, 69, 0.2);
-        color: #dc3545;
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #f87171;
       }
 
       footer {
-        background-color: var(--secondary-color);
-        border-top: 1px solid #333;
-        margin-top: 40px;
+        background-color: var(--card-bg);
+        border-top: 1px solid var(--border-color);
+        margin-top: 3rem;
+        padding: 2rem 0;
       }
 
       .tab-content {
-        padding: 20px 0;
+        padding: 1.5rem 0;
       }
 
       .nav-tabs {
-        border-bottom: 1px solid #444;
+        border-bottom: 1px solid var(--border-color);
       }
 
       .nav-tabs .nav-link {
         color: var(--text-secondary);
         border: none;
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .nav-tabs .nav-link:hover {
+        color: var(--text-primary);
       }
 
       .nav-tabs .nav-link.active {
-        color: var(--text-color);
-        background-color: transparent;
+        color: var(--primary-color);
+        background: transparent;
         border-bottom: 2px solid var(--primary-color);
       }
 
-      .tooltip-inner {
-        background-color: var(--card-color);
-        color: var(--text-color);
-      }
-
-      .tooltip-arrow::before {
-        border-top-color: var(--card-color) !important;
+      .text-muted {
+        color: var(--text-secondary) !important;
       }
 
       @media (max-width: 768px) {
         .container {
-          padding-left: 15px;
-          padding-right: 15px;
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        
+        .card-body {
+          padding: 1.25rem;
+        }
+        
+        .btn-primary {
+          width: 100%;
         }
       }
     </style>
   </head>
   <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-light">
       <div class="container">
         <a class="navbar-brand logo" href="#" data-translate-key="navbarBrand">
-          <i class="fas fa-music"></i>Download Music from Link YouTube
+          <i class="fas fa-music"></i> Music Downloader
         </a>
         <button
           class="navbar-toggler"
@@ -268,7 +346,7 @@
                 <span data-translate-key="navLanguage">Language</span>
               </a>
               <ul
-                class="dropdown-menu dropdown-menu-dark"
+                class="dropdown-menu"
                 aria-labelledby="languageDropdown"
               >
                 <li>
@@ -298,26 +376,26 @@
     <div class="container mt-4">
       <!-- Home Tab -->
       <div id="home" class="tab-content">
-        <div class="row">
+        <div class="row g-4">
           <div class="col-lg-8">
             <div class="card">
               <div class="card-body">
                 <h4 class="card-title" data-translate-key="downloadTitle">
-                  <i class="fas fa-download"></i> Download YouTube Music
+                  <i class="fas fa-download"></i> Download Media
                 </h4>
                 <p class="text-muted" data-translate-key="downloadSubtitle">
-                  Paste YouTube URL to download high quality audio
+                  Paste URL to download high quality audio or video
                 </p>
 
                 <div class="input-group mb-3">
                   <span class="input-group-text">
-                    <i class="fab fa-youtube"></i>
+                    <i class="fas fa-link"></i>
                   </span>
                   <input
                     type="text"
                     id="youtubeUrl"
                     class="form-control"
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="https://..."
                     aria-label="YouTube URL"
                     data-translate-key-placeholder="urlPlaceholder"
                   />
@@ -372,7 +450,7 @@
                 <!-- Quality Selection -->
                 <div id="qualitySelection" style="display: none">
                   <h6 class="mb-3" data-translate-key="selectQualityTitle">
-                    Select Audio Quality:
+                    Select Quality:
                   </h6>
                   <div id="qualityOptions" class="mb-3">
                     <!-- Quality options will be populated here -->
@@ -470,7 +548,7 @@
                 </h5>
                 <ul class="small">
                   <li data-translate-key="guideStep1">
-                    Paste YouTube URL in the box
+                    Paste URL in the box
                   </li>
                   <li data-translate-key="guideStep2">
                     Click "Fetch Info" to get video details
@@ -499,7 +577,7 @@
               <i class="fas fa-list"></i> Batch Download
             </h4>
             <p class="text-muted" data-translate-key="batchSubtitle">
-              Upload a text file with YouTube URLs (one per line)
+              Upload a text file with URLs (one per line)
             </p>
 
             <div class="mb-3">
@@ -519,6 +597,9 @@
                 >Select Quality</label
               >
               <select class="form-select" id="batchQuality">
+                <option value="mp4_1080">MP4 Full HD (1080p)</option>
+                <option value="mp4_720">MP4 HD (720p)</option>
+                <option value="mp4_360">MP4 SD (360p)</option>
                 <option value="mp3_320">MP3 Ultra HD (320kbps)</option>
                 <option value="mp3_256">MP3 High Quality (256kbps)</option>
                 <option value="flac">FLAC Lossless</option>
@@ -588,6 +669,9 @@
                 >Default Download Quality</label
               >
               <select class="form-select" id="defaultQuality">
+                <option value="mp4_1080">MP4 Full HD (1080p)</option>
+                <option value="mp4_720">MP4 HD (720p)</option>
+                <option value="mp4_360">MP4 SD (360p)</option>
                 <option value="mp3_320">MP3 Ultra HD (320kbps)</option>
                 <option value="mp3_256">MP3 High Quality (256kbps)</option>
                 <option value="flac">FLAC Lossless</option>
@@ -663,17 +747,17 @@
       <div class="container">
         <div class="row">
           <div class="col-md-6">
-            <h6 data-translate-key="footerTitle">YouTube Music Downloader</h6>
+            <h6 data-translate-key="footerTitle">Music Downloader</h6>
             <p class="small text-muted" data-translate-key="footerDescription">
-              Tool untuk mendownload musik dari YouTube dengan kualitas tinggi.
+              Tool untuk mendownload musik dari berbagai sumber dengan kualitas tinggi.
               Hanya untuk konten yang Anda miliki haknya.
             </p>
           </div>
           <div class="col-md-6 text-end">
             <p class="small text-muted" data-translate-key="footerCredits">
-              &copy; 2024 YouTube Music Downloader<br />
-              Made with <i class="fas fa-heart text-danger"></i> for music
-              lovers
+              &copy; 2025 Music Downloader<br />
+              Made with <i class="fas fa-heart text-danger"></i> by Bayu
+              Pratama
             </p>
           </div>
         </div>
@@ -692,20 +776,20 @@
       // Translation Data
       const translations = {
         en: {
-          pageTitle: "YouTube Music Downloader - Web Version",
-          navbarBrand: "YT Music Downloader",
+          pageTitle: "Music Downloader - Web Version",
+          navbarBrand: "Music Downloader",
           navHome: "Home",
           navBatch: "Batch Download",
           navHistory: "History",
           navSettings: "Settings",
           navLanguage: "Language",
-          downloadTitle: "Download YouTube Music",
-          downloadSubtitle: "Paste YouTube URL to download high quality audio",
-          urlPlaceholder: "https://www.youtube.com/watch?v=...",
+          downloadTitle: "Download Media",
+          downloadSubtitle: "Paste URL to download high quality audio or video",
+          urlPlaceholder: "https://...",
           fetchInfoBtn: "Fetch Info",
           channelPrefix: "Channel: ",
           viewsSuffix: " views",
-          selectQualityTitle: "Select Audio Quality:",
+          selectQualityTitle: "Select Quality:",
           startDownloadBtn: "Start Download",
           progressTitle: "Download Progress",
           progressWaiting: "Waiting to start...",
@@ -715,13 +799,13 @@
           recentDownloadsTitle: "Recent Downloads",
           noDownloadsYet: "No downloads yet",
           quickGuideTitle: "Quick Guide",
-          guideStep1: "Paste YouTube URL in the box",
+          guideStep1: "Paste URL in the box",
           guideStep2: 'Click "Fetch Info" to get video details',
           guideStep3: "Select desired audio quality",
           guideStep4: 'Click "Start Download"',
           guideStep5: "Download will start automatically",
           batchDownloadTitle: "Batch Download",
-          batchSubtitle: "Upload a text file with YouTube URLs (one per line)",
+          batchSubtitle: "Upload a text file with URLs (one per line)",
           batchSelectFile: "Select File (.txt)",
           batchSelectQuality: "Select Quality",
           startBatchBtn: "Start Batch Download",
@@ -734,12 +818,12 @@
           settingsAddMetadata: "Add metadata (title, artist, etc.)",
           settingsDownloadFolder: "Download Folder",
           saveSettingsBtn: "Save Settings",
-          footerTitle: "YouTube Music Downloader",
+          footerTitle: "Music Downloader",
           footerDescription:
-            "A tool to download music from YouTube in high quality. Only for content you have rights to.",
+            "A tool to download music from various sources in high quality. Only for content you have rights to.",
           footerCredits:
-            '&copy; 2024 YouTube Music Downloader<br/>Made with <i class="fas fa-heart text-danger"></i> for music lovers',
-          alertEnterUrl: "Please enter a YouTube URL",
+            '&copy; 2025 Music Downloader<br/>Made with <i class="fas fa-heart text-danger"></i> by Bayu Pratama',
+          alertEnterUrl: "Please enter a URL",
           alertFetchFailed: "Failed to fetch video information",
           alertStartFailed: "Failed to start download",
           alertSettingsSaved: "Settings saved!",
@@ -762,21 +846,21 @@
           totalDownloadsPrefix: "Total downloads: ",
         },
         id: {
-          pageTitle: "Pengunduh Musik YouTube - Versi Web",
-          navbarBrand: "Pengunduh Musik YouTube",
+          pageTitle: "Pengunduh Musik - Versi Web",
+          navbarBrand: "Pengunduh Musik",
           navHome: "Beranda",
           navBatch: "Unduh Massal",
           navHistory: "Riwayat",
           navSettings: "Pengaturan",
           navLanguage: "Bahasa",
-          downloadTitle: "Unduh Musik YouTube",
+          downloadTitle: "Unduh Media",
           downloadSubtitle:
-            "Tempel URL YouTube untuk mengunduh audio kualitas tinggi",
-          urlPlaceholder: "https://www.youtube.com/watch?v=...",
+            "Tempel URL untuk mengunduh audio atau video kualitas tinggi",
+          urlPlaceholder: "https://...",
           fetchInfoBtn: "Ambil Info",
           channelPrefix: "Saluran: ",
           viewsSuffix: " kali ditonton",
-          selectQualityTitle: "Pilih Kualitas Audio:",
+          selectQualityTitle: "Pilih Kualitas:",
           startDownloadBtn: "Mulai Unduh",
           progressTitle: "Proses Unduhan",
           progressWaiting: "Menunggu untuk memulai...",
@@ -786,13 +870,13 @@
           recentDownloadsTitle: "Unduhan Terkini",
           noDownloadsYet: "Belum ada unduhan",
           quickGuideTitle: "Panduan Cepat",
-          guideStep1: "Tempel URL YouTube di kotak",
+          guideStep1: "Tempel URL di kotak",
           guideStep2: 'Klik "Ambil Info" untuk detail video',
           guideStep3: "Pilih kualitas audio yang diinginkan",
           guideStep4: 'Klik "Mulai Unduh"',
           guideStep5: "Unduhan akan dimulai secara otomatis",
           batchDownloadTitle: "Unduh Massal",
-          batchSubtitle: "Unggah file teks berisi URL YouTube (satu per baris)",
+          batchSubtitle: "Unggah file teks berisi URL (satu per baris)",
           batchSelectFile: "Pilih File (.txt)",
           batchSelectQuality: "Pilih Kualitas",
           startBatchBtn: "Mulai Unduh Massal",
@@ -805,12 +889,12 @@
           settingsAddMetadata: "Tambahkan metadata (judul, artis, dll.)",
           settingsDownloadFolder: "Folder Unduhan",
           saveSettingsBtn: "Simpan Pengaturan",
-          footerTitle: "Pengunduh Musik YouTube",
+          footerTitle: "Pengunduh Musik",
           footerDescription:
-            "Alat untuk mengunduh musik dari YouTube dengan kualitas tinggi. Hanya untuk konten yang Anda miliki haknya.",
+            "Alat untuk mengunduh musik dari berbagai sumber dengan kualitas tinggi. Hanya untuk konten yang Anda miliki haknya.",
           footerCredits:
-            '&copy; 2024 Pengunduh Musik YouTube<br/>Dibuat dengan <i class="fas fa-heart text-danger"></i> untuk pecinta musik',
-          alertEnterUrl: "Silakan masukkan URL YouTube",
+            '&copy; 2025 Pengunduh Musik<br/>Dibuat dengan <i class="fas fa-heart text-danger"></i> oleh Bayu Pratama',
+          alertEnterUrl: "Silakan masukkan URL",
           alertFetchFailed: "Gagal mengambil informasi video",
           alertStartFailed: "Gagal memulai unduhan",
           alertSettingsSaved: "Pengaturan disimpan!",
@@ -913,11 +997,11 @@
               $("#videoThumbnail").attr("src", data.thumbnail);
               $("#videoTitle").text(data.title);
               $("#videoChannel").text(
-                getTranslation("channelPrefix") + data.channel
+                data.channel ? (getTranslation("channelPrefix") + data.channel) : ""
               );
-              $("#videoDuration").text(formatDuration(data.duration));
+              $("#videoDuration").text(data.duration ? formatDuration(data.duration) : "");
               $("#videoViews").text(
-                formatNumber(data.view_count) + getTranslation("viewsSuffix")
+                data.view_count ? (formatNumber(data.view_count) + getTranslation("viewsSuffix")) : ""
               );
               $("#videoDescription").text(data.description);
               $("#videoPreview").show();
@@ -945,19 +1029,45 @@
         container.empty();
 
         // Default quality options
-        const qualityMap = {
-          mp3_320: { name: "MP3 Ultra HD", desc: "320kbps - Best quality" },
-          mp3_256: {
-            name: "MP3 High Quality",
-            desc: "256kbps - Great balance",
+        const qualityGroups = {
+          "Video": {
+            mp4_1080: { name: "MP4 Full HD", desc: "1080p Video" },
+            mp4_720: { name: "MP4 HD", desc: "720p Video" },
+            mp4_480: { name: "MP4 SD", desc: "480p Video" },
+            mp4_360: { name: "MP4 Low", desc: "360p Video" }
           },
-          mp3_192: { name: "MP3 Standard", desc: "192kbps - Good quality" },
-          flac: { name: "FLAC Lossless", desc: "1411kbps - Studio quality" },
-          m4a: { name: "M4A/AAC", desc: "256kbps - Apple compatible" },
-          opus: { name: "OPUS", desc: "160kbps - Efficient" },
-          wav: { name: "WAV", desc: "1411kbps - Uncompressed" },
+          "Audio": {
+            mp3_320: { name: "MP3 Ultra HD", desc: "320kbps - Best quality" },
+            mp3_256: { name: "MP3 High Quality", desc: "256kbps - Great balance" },
+            mp3_192: { name: "MP3 Standard", desc: "192kbps - Good quality" },
+            flac: { name: "FLAC Lossless", desc: "1411kbps - Studio quality" },
+            m4a: { name: "M4A/AAC", desc: "256kbps - Apple compatible" },
+            opus: { name: "OPUS", desc: "160kbps - Efficient" },
+            wav: { name: "WAV", desc: "1411kbps - Uncompressed" }
+          }
         };
 
+        for (const [groupName, options] of Object.entries(qualityGroups)) {
+          container.append(`<h6 class="mt-2 mb-2 text-muted small text-uppercase">${groupName}</h6>`);
+          const groupDiv = $('<div class="mb-2"></div>');
+          
+          for (const [key, info] of Object.entries(options)) {
+            const isActive = key === selectedFormat ? "active" : "";
+            groupDiv.append(`
+              <div class="quality-badge ${isActive}" data-format="${key}"
+                   onclick="selectQuality('${key}')"
+                   title="${info.desc}">
+                  ${info.name}
+              </div>
+            `);
+          }
+          container.append(groupDiv);
+        }
+      }
+
+      /* Old function removed
+      function displayQualityOptions(formats) {
+        // ...
         for (const [key, info] of Object.entries(qualityMap)) {
           const isActive = key === selectedFormat ? "active" : "";
           container.append(`
@@ -968,7 +1078,7 @@
                     </div>
                 `);
         }
-      }
+      } */
 
       function selectQuality(format) {
         selectedFormat = format;
