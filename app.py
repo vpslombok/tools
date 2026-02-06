@@ -71,13 +71,18 @@ class YouTubeDownloader:
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': False,
-                # Tambahkan User-Agent untuk menghindari blokir TikTok/Instagram
-                'http_headers': {
+                'nocheckcertificate': True,
+                'geo_bypass': True,
+            }
+            
+            # Tambahkan User-Agent untuk menghindari blokir TikTok/Instagram
+            # Tapi jangan gunakan untuk YouTube karena bisa menyebabkan Error 403
+            if not ('youtube.com' in url or 'youtu.be' in url):
+                ydl_opts['http_headers'] = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.9',
                 }
-            }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -138,13 +143,18 @@ class YouTubeDownloader:
                 'embedthumbnail': True,
                 'addmetadata': True,
                 'concurrent_fragment_downloads': 4,
-                # Tambahkan User-Agent untuk menghindari blokir TikTok/Instagram
-                'http_headers': {
+                'nocheckcertificate': True,
+                'geo_bypass': True,
+            }
+            
+            # Tambahkan User-Agent untuk menghindari blokir TikTok/Instagram
+            # Tapi jangan gunakan untuk YouTube karena bisa menyebabkan Error 403
+            if not ('youtube.com' in url or 'youtu.be' in url):
+                ydl_opts['http_headers'] = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.9',
                 }
-            }
             
             if ffmpeg_path:
                 ydl_opts['ffmpeg_location'] = ffmpeg_path
